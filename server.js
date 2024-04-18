@@ -4,6 +4,12 @@ const { ReadlineParser } = require('@serialport/parser-readline');
 const path = require('path');
 const app = express();
 
+// State to hold the latest sensor data
+let sensorData = {
+  temperature: "Loading...",
+  humidity: "Loading..."
+};
+
 // Set up the serial port connection to the Arduino
 const port = new SerialPort({ path: 'COM3', baudRate: 9600 });
 const parser = port.pipe(new ReadlineParser({ delimiter: '\n' }));
@@ -14,13 +20,16 @@ app.use(express.static(path.join(__dirname, 'Public')));
 // Endpoint to get the latest sensor data
 app.get('/data', (req, res) => {
   // Placeholder for actual data - to be replaced with real-time Arduino data
-  res.json({ temp: "Loading...", humidity: "Loading..." });
+  res.json(sensorData);
 });
 
-// Establish events for when data is read from the serial port
 parser.on('data', data => {
   console.log('Received data from the serial port: ' + data);
-  // Parse the received data and potentially update the response in the '/data' endpoint
+  const parts = data.split(", "); // Assuming your Arduino output is "Humidity: 21%, Temperature: 29C"
+  if (parts.length === 2) {
+    sensorData.humidity = parts[0].split(": ")[1]; // Extracts humidity
+    sensorData.temperature = parts[1].split(": ")[1]; // Extracts temperature
+  }
 });
 
 const webPort = process.env.PORT || 3000;
