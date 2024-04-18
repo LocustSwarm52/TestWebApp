@@ -37,4 +37,18 @@ app.listen(webPort, () => {
     console.log(`Server running on port ${webPort}`);
 });
 
+// Add a POST endpoint to receive the humidity target
+app.post('/set-humidity', express.json(), (req, res) => {
+  const { humidityTarget } = req.body;
+  if (humidityTarget && !isNaN(humidityTarget)) {
+    port.write(`H${humidityTarget}\n`, (err) => {
+      if (err) {
+        return res.status(500).send("Failed to send humidity target to Arduino");
+      }
+      res.send("Humidity target updated");
+    });
+  } else {
+    res.status(400).send("Invalid humidity target");
+  }
+});
 
